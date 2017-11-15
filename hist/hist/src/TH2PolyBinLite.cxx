@@ -100,9 +100,9 @@ Double_t TH2PolyBinLite::GetXMin()
 {
 	if (fXmin != -1111) return fXmin;
 
-	fXmax = (nVerts == 2 ? (MIN(x[0], x[1])) : (MIN(MIN(x[0], x[1]), x[2])));
+    fXmin = (nVerts == 2 ? (MIN(x[0], x[1])) : (MIN(MIN(x[0], x[1]), x[2])));
 
-	return fXmax;
+    return fXmin;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

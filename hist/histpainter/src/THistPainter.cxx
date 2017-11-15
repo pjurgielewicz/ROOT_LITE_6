@@ -9271,7 +9271,7 @@ void THistPainter::PaintTable(Option_t *option)
 
 void THistPainter::PaintTH2PolyBins(Option_t *option)
 {
-   Warning("DRAW", "THistPainter::PaintTH2PolyBins");
+   Info("DRAW", "THistPainter::PaintTH2PolyBins");
 
    //Do not highlight the histogram, if its part was picked.
    if (gPad->PadInHighlightMode() && gPad->GetSelected() != fH) return;
@@ -9286,18 +9286,20 @@ void THistPainter::PaintTH2PolyBins(Option_t *option)
    if (opt.Contains("p")) mark = kTRUE;
 
    Double_t z;
-   TObject *poly;
+   TObject *poly{nullptr};
 
    PolyBinIterator it(fH);
 
-   while (it.Next(poly, z)) {
-       //b = (TH2PolyBin*)obj;
-       //z = b->GetContent();
+   while ((poly = it.Next(z))) {
+       if (poly){
+           std::cout << "*** POLY ***" << std::endl;
+       }
+       else{
+           std::cout << "*** NO POLY ***" << std::endl;
+       }
        if (z==0 && Hoption.Zero) continue; // Do not draw empty bins in case of option "COL0 L"
-       //poly  = b->GetPolygon();
 
-      // Paint the TGraph bins.
-      if (poly->IsA() == TGraph::Class()) {
+      if ( poly->IsA() == TGraph::Class()) {
          TGraph *g  = (TGraph*)poly;
          g->TAttLine::Modify();
          g->TAttMarker::Modify();
@@ -9313,6 +9315,8 @@ void THistPainter::PaintTH2PolyBins(Option_t *option)
          }
          if (fill) g->Paint("F");
          if (mark) g->Paint("P");
+
+         Info("DRAW", "THistPainter::PaintTH2PolyBins::Single TGRAPH PAINTED");
       }
 
       // Paint the TMultiGraph bins.
@@ -9382,7 +9386,7 @@ void THistPainter::PaintTH2PolyColorLevels(Option_t *)
    TObject *poly;
    PolyBinIterator it(fH);
 
-   while (it.Next(poly, z)) {
+   while ((poly = it.Next(z))) {
       if (z==0 && Hoption.Zero) continue;
       if (Hoption.Logz) {
          if (z > 0) z = TMath::Log10(z);
@@ -9390,7 +9394,6 @@ void THistPainter::PaintTH2PolyColorLevels(Option_t *)
       }
       if (z < zmin) continue;
 
-      Info("DRAW", "THistPainter::PaintTH2PolyColorLevels::Define bin color");
       // Define the bin color.
       if (fH->TestBit(TH1::kUserContour)) {
          zc = fH->GetContourLevelPad(0);
@@ -9409,7 +9412,6 @@ void THistPainter::PaintTH2PolyColorLevels(Option_t *)
       }
       theColor = Int_t((color+0.99)*Float_t(ncolors)/Float_t(ndivz));
       if (theColor > ncolors-1) theColor = ncolors-1;
-      Info("DRAW", "THistPainter::PaintTH2PolyColorLevels::Color defined");
 
       // Paint the TGraph bins.
       if (poly->IsA() == TGraph::Class()) {
@@ -9470,26 +9472,18 @@ void THistPainter::PaintTH2PolyScatterPlot(Option_t *)
    // to get same random numbers when drawing the same histogram
    TRandom2 random;
 
-   //TH2PolyBin  *b;
-
-   //TIter next(((TH2Poly*)fH)->GetBins());
    TObject *poly;
-
    PolyBinIterator it(fH);
 
    Double_t maxarea = 0, a;
-   while (it.Next(poly, z)) {
+   while ((poly = it.Next(z))) {
       a = it.GetArea();
       if (a>maxarea) maxarea = a;
    }
 
-   //next.Reset();
    it.Reset();
 
-   while (it.Next(poly, z)) {
-      //b     = (TH2PolyBin*)obj;
-      //poly  = b->GetPolygon();
-      //z     = b->GetContent();
+   while ((poly = it.Next(z))) {
       if (z < zmin) z = zmin;
       if (z > zmax) z = zmax;
       if (Hoption.Logz) {
@@ -9580,9 +9574,7 @@ void THistPainter::PaintTH2PolyText(Option_t *)
 
    PolyBinIterator it(fH);
 
-   while (it.Next(poly, z)) {
-      //b = (TH2PolyBin*)obj;
-      //p = b->GetPolygon();;
+   while ((poly = it.Next(z))) {
       x = (it.GetXMin()+it.GetXMax())/2;
       if (Hoption.Logx) {
          if (x > 0)  x  = TMath::Log10(x);
@@ -9593,7 +9585,6 @@ void THistPainter::PaintTH2PolyText(Option_t *)
          if (y > 0)  y  = TMath::Log10(y);
          else continue;
       }
-//      z = b->GetContent();
       if (z < Hparam.zmin || (z == 0 && !gStyle->GetHistMinimumZero()) ) continue;
       if (opt==2) {
          e = fH->GetBinError(it.GetBinNumber());
@@ -11360,9 +11351,10 @@ PolyBinIterator::~PolyBinIterator()
 // Go to the next bin in the list, get its polygon and value
 // Returns kTRUE as long as iteration is valid (end of collection not reached)
 
-Bool_t PolyBinIterator::Next(TObject* poly, Double_t& z)
+TObject* PolyBinIterator::Next(Double_t& z)
 {
     Info("DRAW", "PolyBinIterator::Next");
+    TObject* poly{ nullptr };
 
     if (overflow || (!isRegularBin && !liteBins))
     {
@@ -11413,9 +11405,10 @@ Bool_t PolyBinIterator::Next(TObject* poly, Double_t& z)
         {
             std::cout << "[" << x[i] << "; " << y[i] << "]" << std::endl;
         }
+        Info("DRAW", (std::string("PolyBinIterator::Next::Class Test: ") + std::to_string(poly->IsA() == TGraph::Class())).c_str() );
     }
 
-    return !overflow;
+    return poly;
 }
 
 // Reset iterator position to the beginning
@@ -11445,6 +11438,7 @@ Double_t PolyBinIterator::GetXMin()
     {
         Double_t val = 0.0;
         if (isRegularBin) val = b->GetXMin();
+        //liteBinNum always points to the next bin so it needs to go back one step
         else val = liteBins->at(liteBinNum - 1)->GetXMin();
         Info("DRAW", (std::string("PolyBinIterator::GetXMin: ") + std::to_string(val)).c_str());
 

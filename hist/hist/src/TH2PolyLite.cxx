@@ -656,37 +656,12 @@ Int_t TH2PolyLite::Fill(Double_t x, Double_t y, Double_t w)
         if (fSumw2.fN) fSumw2.fArray[4] += w*w;
 		return -5;
 	}
-
-	//TH2PolyBinLite *bin;
 	Int_t bi;
-
-	//TIter next(&fCells[n + fCellX*m]);
-	//TObject *obj;
-
-	//while ((obj = next())) {
-	//	bin = (TH2PolyBinLite*)obj;
-	//	bi = bin->GetBinNumber() - 1;
-	//	if (bin->IsInside(x, y)) {
-	//		bin->Fill(w);
-
-	//		// Statistics
-	//		fTsumw = fTsumw + w;
-	//		fTsumwx = fTsumwx + w*x;
-	//		fTsumwx2 = fTsumwx2 + w*x*x;
-	//		fTsumwy = fTsumwy + w*y;
-	//		fTsumwy2 = fTsumwy2 + w*y*y;
-	//		if (fSumw2.fN) fSumw2.fArray[bi] += w*w;
-	//		fEntries++;
-
-	//		SetBinContentChanged(kTRUE);
-
-	//		return bin->GetBinNumber();
-	//	}
-	//}
 
 	for (auto bin : fCells[n + fCellX*m]) {
         bi = bin->GetBinNumber() - 1 + kNOverflow;
 		if (bin->IsInside(x, y)) {
+
 			bin->Fill(w);
 
 			// Statistics
@@ -714,18 +689,16 @@ Int_t TH2PolyLite::Fill(Double_t x, Double_t y, Double_t w)
 
 Int_t TH2PolyLite::Fill(Int_t id, Double_t w)
 {
-	//for (auto bin : *fBins){
-	//	if (id == bin->GetBinNumber()) {
-	//		bin->Fill(w);
-	//		fEntries++;
-	//		SetBinContentChanged(kTRUE);
-	//		return id;
-	//	}
-	//}
-	SetBinContent(id, RetrieveBinContent(id) + w);
+    // TODO: Overflows?
+    if (!fBins || id >= fBins->size() || id < 0) return -5;
+
+    TH2PolyBinLite* bin = (*fBins)[id];
+
+    bin->Fill(w);
     fEntries++;
 
-	return 0;
+    SetBinContentChanged(kTRUE);
+    return id;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
